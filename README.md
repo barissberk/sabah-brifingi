@@ -25,12 +25,13 @@ Mac kapalı olsa da çalışır. [.github/workflows/sabah-brifingi.yml](.github/
 |---|---|
 | Hafta içi 07:15 | Bülten + ses/video hazırlanır, ses GitHub Pages'e yayımlanır, **08:15**'te e-posta gönderilir (resmi tatillerde atlanır) |
 | Her gün 18:30, 23:50 | KAP bildirim kopyası (önbellekte saklanır) |
-| Elle "Run workflow" | `hemen-gonder` ile beklemeden test |
+| Elle "Run workflow" | `hemen-gonder`: beklemeden çalıştır ve gönder · `deneme`: e-posta göndermeden ve ses yayımlamadan çalıştır (kayıt kontrolü) |
 
 Kurulum: GitHub CLI ile giriş yapıp (`gh auth login`) `make cloud-setup`. Betik depoyu oluşturur, anahtarları
 `.env`'den GitHub Secrets'a aktarır (ekrana yazmadan), ilk test çalışmasını başlatır ve GitHub Pages'i açar.
 Depo herkese açıktır (ücretsiz Pages için); `.env` ve `output/` yüklenmez. Sesler tahmin edilemeyen adlarla
-yayımlanır ve 14 gün sonra silinir. Bulut kurulduysa Mac'teki zamanlayıcıyı kaldırın (`make schedule-uninstall`).
+yayımlanır ve 14 gün sonra silinir; ancak depo açık olduğundan `gh-pages` dalında görünürler (içerik kamuya açık
+haber özetidir). Basın taraması Google Haberler'e erişemezse Bing Haberler'e geçer. Bulut kurulduysa Mac'teki zamanlayıcıyı kaldırın (`make schedule-uninstall`).
 
 ## Kişisel kurulum (Mac + Gmail)
 
