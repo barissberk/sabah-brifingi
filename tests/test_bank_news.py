@@ -222,3 +222,25 @@ def test_short_headline():
     no_stop = "Garanti BBVA " + "çok uzun başlık " * 10
     out = bank_news.short_headline(no_stop)
     assert out.endswith("…") and len(out) <= 101
+
+
+def test_press_falls_back_to_bing_when_google_unavailable(monkeypatch):
+    bing = """<?xml version="1.0"?><rss xmlns:News="https://www.bing.com/news/search?q=x&amp;format=rss"><channel>
+    <item><title>Akbank, 50 milyon Euro tahvil ihraç edecek</title><link>https://bing.test/1</link>
+     <pubDate>Fri, 09 Oct 2026 07:00:00 GMT</pubDate><News:Source>Investing.com Türkiye</News:Source></item>
+    </channel></rss>"""
+
+    def fake_get(url, **k):
+        class R:
+            status_code = 200
+            content = bing.encode()
+
+            def raise_for_status(self):
+                if "news.google.com" in url:
+                    raise ConnectionError("503 Service Unavailable")
+        return R()
+
+    monkeypatch.setattr(bank_news.requests, "get", fake_get)
+    out = bank_news.fetch_press_mentions("Akbank", date(2026, 10, 10))
+    assert [(m["headline"], m["source"]) for m in out] == [("Akbank, 50 milyon Euro tahvil ihraç edecek",
+                                                             "Investing.com Türkiye")]

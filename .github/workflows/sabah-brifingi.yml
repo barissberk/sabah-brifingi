@@ -3,6 +3,7 @@
 #  Hafta içi 07:15 TSİ : bülten + ses/video hazırlanır, ses GitHub Pages'e yayımlanır, 08:15'te e-posta gönderilir
 #  Her gün 18:30 / 23:50: KAP bildirim kopyası (KAP servisi yalnızca o günün bildirimlerini verir)
 #  Elle ("Run workflow"): hemen-gonder = beklemeden çalıştırıp gönder (test için)
+#                         deneme       = beklemeden çalıştır; e-posta GÖNDERME, ses yayımlama (kayıtları kontrol için)
 #
 # Gerekli Secrets: GEMINI_API_KEY, SMTP_USER (Gmail adresi), SMTP_PASSWORD (Google uygulama şifresi)
 # İsteğe bağlı Secret: SUBSCRIBERS (virgülle; boşsa SMTP_USER'a gönderilir)
@@ -20,7 +21,7 @@ on:
       mode:
         description: "Ne çalışsın?"
         type: choice
-        options: [hemen-gonder, sabah-zamanlamasi, kap-kopyasi]
+        options: [hemen-gonder, deneme, sabah-zamanlamasi, kap-kopyasi]
         default: hemen-gonder
 
 permissions:
@@ -102,11 +103,11 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: >-
           python main.py --now --prepare-only
-          ${{ steps.mode.outputs.mode == 'hemen-gonder' && '--no-wait' || '' }}
+          ${{ (steps.mode.outputs.mode == 'hemen-gonder' || steps.mode.outputs.mode == 'deneme') && '--no-wait' || '' }}
           ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
 
       - name: Sesi yayımla (GitHub Pages)
-        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        if: steps.mode.outputs.mode != 'kap-kopyasi' && steps.mode.outputs.mode != 'deneme'
         run: |
           cd site
           git add -A
@@ -123,7 +124,8 @@ jobs:
           SUBSCRIBERS: ${{ secrets.SUBSCRIBERS || secrets.SMTP_USER }}
         run: >-
           python main.py --dispatch-only
-          ${{ steps.mode.outputs.mode == 'hemen-gonder' && '--no-wait' || '' }}
+          ${{ (steps.mode.outputs.mode == 'hemen-gonder' || steps.mode.outputs.mode == 'deneme') && '--no-wait' || '' }}
+          ${{ steps.mode.outputs.mode == 'deneme' && '--dry-run' || '' }}
           ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
 
       # ---------------- Ortak ----------------

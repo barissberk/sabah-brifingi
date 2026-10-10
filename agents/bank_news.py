@@ -290,27 +290,47 @@ def _trusted(outlet: str) -> bool:
     return any(o == t if len(t) <= 3 else o.startswith(t) for t in TRUSTED_OUTLETS)
 
 
-def fetch_press_mentions(bank: str, today: date) -> List[dict]:
-    """Google Haberler araması: son günlerde bankanın adının başlıkta geçtiği finansal veya kurumsal haberler."""
+BING_NEWS_RSS = "https://www.bing.com/news/search"
+
+
+def _press_entries(bank: str) -> List[Tuple[str, str, Optional[str], Optional[tuple]]]:
+    """(başlık, yayın, link, yayın zamanı) listesi. Önce Google Haberler; erişilemezse (ör. bulut sunucularında
+    503) Bing Haberler RSS yedeği kullanılır."""
     import feedparser
     from urllib.parse import urlencode
 
-    query, names, _ = BANK_QUERIES[bank]
-    url = f"{GOOGLE_NEWS_RSS}?" + urlencode({"q": f"{query} when:{MENTION_WINDOW_DAYS}d", "hl": "tr", "gl": "TR",
-                                            "ceid": "TR:tr"})
-    try:
-        resp = requests.get(url, timeout=HTTP_TIMEOUT, headers={"User-Agent": USER_AGENT})
-        resp.raise_for_status()
-        entries = feedparser.parse(resp.content).entries
-    except Exception as exc:  # noqa: BLE001
-        log.warning("%s basın taraması yapılamadı: %s", bank, exc)
-        return []
+    query = BANK_QUERIES[bank][0]
+    sources = [
+        ("Google Haberler", f"{GOOGLE_NEWS_RSS}?" + urlencode(
+            {"q": f"{query} when:{MENTION_WINDOW_DAYS}d", "hl": "tr", "gl": "TR", "ceid": "TR:tr"})),
+        ("Bing Haberler", f"{BING_NEWS_RSS}?" + urlencode(
+            {"q": query, "format": "rss", "setlang": "tr-TR", "cc": "TR"})),
+    ]
+    for name, url in sources:
+        try:
+            resp = requests.get(url, timeout=HTTP_TIMEOUT, headers={"User-Agent": USER_AGENT})
+            resp.raise_for_status()
+            entries = feedparser.parse(resp.content).entries
+        except Exception as exc:  # noqa: BLE001
+            log.warning("%s: %s taraması yapılamadı (%s), sıradaki kaynak deneniyor", bank, name, exc)
+            continue
+        out = []
+        for e in entries:
+            outlet = e.get("news_source") or (e.get("source") or {}).get("title", "")
+            title = e.get("title", "")
+            if outlet:  # Google başlığın sonuna " - Yayın" ekler
+                title = re.sub(rf"\s+-\s+{re.escape(outlet)}\s*$", "", title).strip()
+            out.append((title, outlet, e.get("link"), e.get("published_parsed")))
+        return out
+    return []
+
+
+def fetch_press_mentions(bank: str, today: date) -> List[dict]:
+    """Basın taraması: son günlerde bankanın adının başlıkta geçtiği finansal veya kurumsal haberler."""
+    _, names, _ = BANK_QUERIES[bank]
     out = []
-    for e in entries:
-        outlet = (e.get("source") or {}).get("title", "")
-        title = re.sub(rf"\s+-\s+{re.escape(outlet)}\s*$", "", e.get("title", "")).strip() if outlet else e.get("title", "")
+    for title, outlet, link, parsed in _press_entries(bank):
         low = title.lower()
-        parsed = e.get("published_parsed")
         published = datetime(*parsed[:6], tzinfo=timezone.utc).astimezone(TR_TZ).date() if parsed else None
         if (not published or (today - published).days > MENTION_WINDOW_DAYS or published > today
                 or not any(n in low for n in names)          # banka adı başlıkta geçmeli
@@ -320,7 +340,7 @@ def fetch_press_mentions(bank: str, today: date) -> List[dict]:
         category = classify_mention(title)
         if category is None:
             continue
-        out.append({"headline": short_headline(title), "url": e.get("link"), "source": outlet,
+        out.append({"headline": short_headline(title), "url": link, "source": outlet,
                     "published": published.isoformat(), "category": category})
     return out
 
