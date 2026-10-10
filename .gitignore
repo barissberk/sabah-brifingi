@@ -1,0 +1,12 @@
+.env
+.venv/
+output/
+__pycache__/
+.pytest_cache/
+terminal/node_modules/
+terminal/dist/
+terminal/public/data/
+logs/
+.claude/
+*.eml
+.DS_Store

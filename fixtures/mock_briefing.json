@@ -1,0 +1,183 @@
+{
+  "date": "2026-10-09",
+  "generated_at": "2026-10-09T04:40:00+00:00",
+  "markets": [
+    {
+      "key": "bist100",
+      "label": "BIST 100",
+      "value": 10842.37,
+      "change_pct": 1.18,
+      "unit": "",
+      "decimals": 2,
+      "source": "MOCK"
+    },
+    {
+      "key": "usdtry",
+      "label": "USD/TRY",
+      "value": 41.9725,
+      "change_pct": 0.12,
+      "unit": "",
+      "decimals": 4,
+      "source": "MOCK"
+    },
+    {
+      "key": "brent",
+      "label": "Brent Petrol",
+      "value": 66.84,
+      "change_pct": -0.87,
+      "unit": "$",
+      "decimals": 2,
+      "source": "MOCK"
+    },
+    {
+      "key": "gold",
+      "label": "Ons Altın",
+      "value": 3982.4,
+      "change_pct": 0.54,
+      "unit": "$",
+      "decimals": 2,
+      "source": "MOCK"
+    }
+  ],
+  "executive_summary": [
+    "[MOCK] Fed tutanakları yıl sonuna kadar kademeli faiz indirimi beklentisini destekledi; ABD 10 yıllık getirisi geriledi.",
+    "[MOCK] Gelişen piyasa risk iştahı güçlenirken Türkiye 5 yıllık CDS primi 270 baz puanın altına indi.",
+    "[MOCK] BIST 100 bankacılık öncülüğünde günü %1,2 yükselişle tamamladı.",
+    "[MOCK] Brent petrol, OPEC+ arz artışı beklentisiyle 67 doların altında seyrediyor.",
+    "[MOCK] Bugün yurt içinde TCMB piyasa katılımcıları anketi, ABD'de Michigan güven endeksi takip edilecek."
+  ],
+  "global_developments": [
+    {
+      "headline": "[MOCK] Fed tutanakları: Üyelerin çoğu ek indirime açık",
+      "summary": "Tutanaklar, işgücü piyasasındaki yavaşlamanın politika faizinde kademeli gevşemeyi desteklediğini gösterdi. Vadeli piyasalar aralık için indirim olasılığını artırdı.",
+      "source": "Reuters",
+      "url": "https://example.com/mock/fed",
+      "impact": "high"
+    },
+    {
+      "headline": "[MOCK] ECB'den temkinli mesaj",
+      "summary": "ECB yetkilileri enflasyonun hedefe yakınsadığını ancak ek indirim için acele edilmeyeceğini belirtti.",
+      "source": "Bloomberg",
+      "url": "https://example.com/mock/ecb",
+      "impact": "medium"
+    },
+    {
+      "headline": "[MOCK] Asya borsaları teknoloji hisseleriyle yükseldi",
+      "summary": "Nikkei ve Kospi, yarı iletken şirketlerindeki alımlarla güne pozitif başladı.",
+      "source": "Bloomberg",
+      "url": "https://example.com/mock/asia",
+      "impact": "low"
+    }
+  ],
+  "turkey_agenda": [
+    {
+      "headline": "[MOCK] TCMB rezervlerinde haftalık artış",
+      "summary": "Brüt rezervler önceki haftaya göre yükselirken swap hariç net rezervlerde de iyileşme kaydedildi.",
+      "source": "TCMB",
+      "url": "https://example.com/mock/tcmb",
+      "impact": "high"
+    },
+    {
+      "headline": "[MOCK] Bankacılık endeksi %2,4 yükseldi",
+      "summary": "Faiz indirimi beklentileri ve güçlü çeyrek bilanço öngörüleri banka hisselerinde alımları destekledi.",
+      "source": "Bloomberg HT",
+      "url": "https://example.com/mock/xbank",
+      "impact": "medium"
+    },
+    {
+      "headline": "[MOCK] Örnek Holding'den yeni yatırım açıklaması",
+      "summary": "Şirket, KAP'a yaptığı açıklamada yenilenebilir enerji kapasitesini artırmaya yönelik yatırım kararı aldığını bildirdi.",
+      "source": "KAP",
+      "url": "https://example.com/mock/kap",
+      "impact": "medium"
+    }
+  ],
+  "economic_calendar": [
+    {
+      "time": "10:00",
+      "country": "TR",
+      "event": "[MOCK] Sanayi Üretimi (Yıllık)",
+      "importance": "medium",
+      "forecast": "%2,1",
+      "previous": "%1,8"
+    },
+    {
+      "time": "14:30",
+      "country": "TR",
+      "event": "[MOCK] TCMB Piyasa Katılımcıları Anketi",
+      "importance": "high",
+      "forecast": null,
+      "previous": null
+    },
+    {
+      "time": "17:00",
+      "country": "US",
+      "event": "[MOCK] Michigan Tüketici Güveni (Öncü)",
+      "importance": "high",
+      "forecast": "54,2",
+      "previous": "55,1"
+    }
+  ],
+  "sources": [
+    "Bloomberg",
+    "Bloomberg HT",
+    "KAP",
+    "Reuters",
+    "TCMB",
+    "MOCK"
+  ],
+  "banking_agenda": [
+    {
+      "headline": "[MOCK] Örnek Banka'dan 500 milyon dolarlık eurobond ihracı",
+      "summary": "Banka, 5 yıl vadeli eurobond ihracını yoğun talep ile tamamladığını duyurdu.",
+      "source": "QNB",
+      "url": "https://example.com/mock/bank1",
+      "impact": "medium"
+    },
+    {
+      "headline": "[MOCK] Örnek Banka'ya 1 milyar dolarlık sendikasyon kredisi",
+      "summary": "Sendikasyon kredisi 20 ülkeden 40 bankanın katılımıyla yenilendi.",
+      "source": "Yapı Kredi",
+      "url": "https://example.com/mock/bank2",
+      "impact": "medium"
+    }
+  ],
+  "bank_watch": [
+    {
+      "bank": "Garanti BBVA",
+      "status": "ok",
+      "headline": "[MOCK] Örnek Banka'dan 125 milyon dolarlık tahvil ihracı",
+      "url": "https://example.com/mock/g",
+      "published": "2026-09-28",
+      "summary": "",
+      "is_new": false
+    },
+    {
+      "bank": "Akbank",
+      "status": "ok",
+      "headline": "[MOCK] Örnek Banka'dan ekonomiye 2,9 trilyon TL kredi desteği",
+      "url": "https://example.com/mock/a",
+      "published": "2026-07-28",
+      "summary": "",
+      "is_new": false
+    },
+    {
+      "bank": "Yapı Kredi",
+      "status": "ok",
+      "headline": "[MOCK] Örnek Banka'ya 1 milyar dolarlık sendikasyon kredisi",
+      "url": "https://example.com/mock/y",
+      "published": "2026-10-09",
+      "summary": "Sendikasyon kredisi 20 ülkeden 40 bankanın katılımıyla yenilendi.",
+      "is_new": true
+    },
+    {
+      "bank": "QNB",
+      "status": "unavailable",
+      "headline": null,
+      "url": null,
+      "published": null,
+      "summary": "",
+      "is_new": false
+    }
+  ]
+}

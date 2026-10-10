@@ -1,0 +1,7 @@
+# KAP öncelikli şirket listesi — satır başına KAP'taki şirket unvanının bir parçası (büyük harf önerilir).
+# Bu listedeki şirketlerin bildirimleri bültende öne çıkarılır. Örn. BIST 100 şirketleri veya müşteri portföyü.
+# Liste boşsa tüm şirketler yalnızca bildirimin önemine göre değerlendirilir.
+QNB
+GARANTİ BANKASI
+AKBANK
+YAPI VE KREDİ BANKASI

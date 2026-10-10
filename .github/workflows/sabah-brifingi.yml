@@ -1,0 +1,155 @@
+# Sabah Finans Brifingi — bulutta (GitHub Actions) çalışır; Mac'e bağlı değildir.
+#
+#  Hafta içi 07:15 TSİ : bülten + ses/video hazırlanır, ses GitHub Pages'e yayımlanır, 08:15'te e-posta gönderilir
+#  Her gün 18:30 / 23:50: KAP bildirim kopyası (KAP servisi yalnızca o günün bildirimlerini verir)
+#  Elle ("Run workflow"): hemen-gonder = beklemeden çalıştırıp gönder (test için)
+#
+# Gerekli Secrets: GEMINI_API_KEY, SMTP_USER (Gmail adresi), SMTP_PASSWORD (Google uygulama şifresi)
+# İsteğe bağlı Secret: SUBSCRIBERS (virgülle; boşsa SMTP_USER'a gönderilir)
+# Türkiye UTC+3 (yaz saati yok) → cron saatleri UTC'dir. GitHub zamanlamaları birkaç dakika gecikebilir;
+# bu yüzden hazırlık 07:15'te başlar, gönderim kod içinde tam 08:15'e ayarlanır.
+name: Sabah Finans Brifingi
+
+on:
+  schedule:
+    - cron: "15 4 * * 1-5"   # 07:15 TSİ — sabah bülteni
+    - cron: "30 15 * * *"    # 18:30 TSİ — KAP akşam kopyası
+    - cron: "50 20 * * *"    # 23:50 TSİ — KAP gece kopyası
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Ne çalışsın?"
+        type: choice
+        options: [hemen-gonder, sabah-zamanlamasi, kap-kopyasi]
+        default: hemen-gonder
+
+permissions:
+  contents: write            # ses dosyalarını gh-pages dalına yazmak için
+
+concurrency:
+  group: brifing-${{ github.event.schedule || inputs.mode }}
+  cancel-in-progress: false
+
+env:
+  TZ: Europe/Istanbul
+  PYTHONUNBUFFERED: "1"
+  LLM_PROVIDER: gemini
+  VIDEO_PROVIDER: gemini
+  EMAIL_PROVIDER: smtp
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: "587"
+  SMTP_USE_TLS: "true"
+
+jobs:
+  brifing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - name: Çalışma türünü belirle
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then m="${{ inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "15 4 * * 1-5" ]; then m="sabah-zamanlamasi"
+          else m="kap-kopyasi"; fi
+          echo "mode=$m" >> "$GITHUB_OUTPUT"
+          echo "Çalışma türü: $m"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Bağımlılıklar
+        run: pip install -q -r requirements.txt
+
+      - name: KAP önbelleğini geri yükle
+        uses: actions/cache/restore@v4
+        with:
+          path: output/_kap_cache
+          key: kap-${{ github.run_id }}
+          restore-keys: kap-
+
+      # ---------------- KAP kopyası ----------------
+      - name: KAP kopyası al
+        if: steps.mode.outputs.mode == 'kap-kopyasi'
+        run: python -m agents.kap_source --snapshot
+
+      # ---------------- Bülten ----------------
+      - name: Yazı tipleri (video görseli)
+        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        run: sudo apt-get install -y -qq fonts-dejavu-core > /dev/null
+
+      - name: Yayın dalını hazırla (gh-pages)
+        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        run: |
+          git config --global user.name "sabah-brifingi-bot"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null; then
+            git fetch --depth=1 origin gh-pages:gh-pages
+            git worktree add site gh-pages
+          else
+            git worktree add --orphan -b gh-pages site
+          fi
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "MEDIA_PUBLISH_DIR=$PWD/site" >> "$GITHUB_ENV"
+          echo "MEDIA_PUBLIC_BASE_URL=https://${owner}.github.io/${{ github.event.repository.name }}" >> "$GITHUB_ENV"
+
+      - name: Hazırla (bülten, ses, video)
+        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py --now --prepare-only ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
+
+      - name: Sesi yayımla (GitHub Pages)
+        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        run: |
+          cd site
+          git add -A
+          if git diff --cached --quiet; then echo "Yayımlanacak yeni ses yok"; exit 0; fi
+          git commit -q -m "Sesli brifing: $(date +%F)"
+          git push -q origin gh-pages
+
+      - name: Gönder (08:15)
+        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: Sabah Brifingi <${{ secrets.SMTP_USER }}>
+          SUBSCRIBERS: ${{ secrets.SUBSCRIBERS || secrets.SMTP_USER }}
+        run: >-
+          python main.py --dispatch-only
+          ${{ steps.mode.outputs.mode == 'hemen-gonder' && '--no-wait' || '' }}
+          ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
+
+      # ---------------- Ortak ----------------
+      - name: KAP önbelleğini kaydet
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: output/_kap_cache
+          key: kap-${{ github.run_id }}
+
+      - name: Çıktıları sakla (7 gün)
+        if: always() && steps.mode.outputs.mode != 'kap-kopyasi'
+        uses: actions/upload-artifact@v4
+        with:
+          name: brifing-${{ github.run_id }}
+          path: |
+            output/*/briefing.html
+            output/*/briefing.json
+            output/*/run_report.json
+            output/*/teleprompter.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # GitHub, 60 gün hiç işlem olmayan herkese açık depolarda zamanlanmış işleri durdurur.
+      - name: Zamanlamayı canlı tut
+        if: steps.mode.outputs.mode == 'sabah-zamanlamasi'
+        run: |
+          last=$(git log -1 --format=%ct HEAD)
+          if [ "$last" -lt $(( $(date +%s) - 50*86400 )) ]; then
+            git commit -q --allow-empty -m "Zamanlama canlı tutma"
+            git push -q origin HEAD
+          fi

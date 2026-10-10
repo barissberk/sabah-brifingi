@@ -1,0 +1,25 @@
+# --- Çekirdek ---
+python-dotenv>=1.0
+pydantic>=2.6
+requests>=2.31
+jinja2>=3.1
+
+# --- Ajan 1: Veri toplama & küratörlük ---
+feedparser>=6.0          # RSS/Atom haber akışları (Bloomberg HT, Foreks, lisanslı Reuters/Bloomberg feed'leri)
+yfinance>=0.2.40         # BIST100, USD/TRY, Brent, Ons Altın kapanış/son fiyatları
+beautifulsoup4>=4.12    # Banka basın bülteni sayfalarından haber kartı çıkarımı
+anthropic>=0.70          # Claude ile haber küratörlüğü ve özet üretimi (opsiyonel; anahtar yoksa kural tabanlı)
+
+# --- Zamanlama ---
+apscheduler>=3.10,<4     # Hafta içi 07:30 tetikleyici
+holidays>=0.50           # Türkiye resmi tatillerinde çalışmama
+
+# --- Test ---
+pytest>=8.0
+
+# --- Ajan 3: Gemini video kartı ---
+pillow>=10.1             # 1280x720 bülten kartı görseli
+imageio-ffmpeg>=0.5      # Gömülü ffmpeg ikilisi (sistemde ffmpeg kurulumu gerekmez)
+
+# Not: Ajan 3 / Ajan 4 dış servisleri (ElevenLabs, HeyGen, D-ID, Resend) doğrudan
+# REST üzerinden `requests` ile çağrılır; ek SDK gerekmez. SMTP için stdlib smtplib kullanılır.

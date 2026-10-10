@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>Sabah Finans Brifingi — {{ b.date | date_tr }}</title>
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<style>table, td, div, p, a, span { font-family: Arial, Helvetica, sans-serif !important; }</style>
+<![endif]-->
+<style>
+  /* Yalnızca responsive kırılımlar burada; tüm görsel stiller inline. */
+  body { margin:0 !important; padding:0 !important; width:100% !important; }
+  a { text-decoration:none; }
+  @media only screen and (max-width: 620px) {
+    .container { width:100% !important; }
+    .px { padding-left:16px !important; padding-right:16px !important; }
+    .tile { display:block !important; width:100% !important; box-sizing:border-box; margin-bottom:8px !important; }
+    .tile-gap { display:none !important; }
+    .h1 { font-size:22px !important; line-height:28px !important; }
+    .cal-col-hide { display:none !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:{{ c.bg }};" bgcolor="{{ c.bg }}">
+<!-- Önizleme metni (gelen kutusunda konu altında görünür) -->
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:{{ c.bg }};">
+  {{ b.executive_summary[0] if b.executive_summary else "Günün piyasa özeti" }}
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.bg }}" style="background-color:{{ c.bg }};">
+<tr><td align="center" style="padding:24px 8px;">
+
+<!--[if mso]><table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table role="presentation" class="container" width="640" cellpadding="0" cellspacing="0" border="0" style="width:640px; max-width:640px;">
+
+  <!-- ÜST BAŞLIK -->
+  <tr><td class="px" style="padding:8px 24px 20px 24px; font-family:Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.accent }}; font-weight:bold;">Sabah Finans Brifingi</td>
+      <td align="right" style="font-size:12px; color:{{ c.muted }};">{{ b.date | date_tr }}</td>
+    </tr></table>
+    <div class="h1" style="font-size:26px; line-height:32px; color:{{ c.text }}; font-weight:bold; padding-top:10px;">Piyasalar güne nasıl başlıyor?</div>
+    <div style="height:3px; width:48px; background-color:{{ c.accent }}; margin-top:14px; line-height:3px; font-size:3px;">&nbsp;</div>
+  </td></tr>
+
+  <!-- PİYASA GÖSTERGELERİ -->
+  <tr><td class="px" style="padding:0 24px 20px 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+    {% for m in b.markets %}
+      <td class="tile" width="{{ (100 / (b.markets | length)) | int }}%" valign="top" bgcolor="{{ c.card }}" style="background-color:{{ c.card }}; border:1px solid {{ c.border }}; border-radius:8px; padding:12px 10px; font-family:Arial, Helvetica, sans-serif;">
+        <div style="font-size:10px; letter-spacing:1px; text-transform:uppercase; color:{{ c.muted }};">{{ m.label }}</div>
+        <div style="font-size:17px; line-height:24px; font-weight:bold; color:{{ c.text }}; padding-top:4px; white-space:nowrap;">
+          {% if m.unit == "$" and m.value is not none %}${% endif %}{{ m.value | num(m.decimals) }}{% if m.unit and m.unit != "$" and m.value is not none %} <span style="font-size:11px; color:{{ c.muted }};">{{ m.unit }}</span>{% endif %}
+        </div>
+        <div style="font-size:12px; font-weight:bold; color:{{ m.change_pct | chg_color }}; padding-top:2px;">{{ m.change_pct | chg or "&nbsp;" | safe }}</div>
+      </td>
+      {% if not loop.last %}<td class="tile-gap" width="6" style="font-size:0; line-height:0;">&nbsp;</td>{% endif %}
+    {% endfor %}
+    </tr></table>
+  </td></tr>
+
+  {% if media_box %}
+  <!-- SESLİ BRİFİNG: yalnızca dinleme bağlantısı -->
+  <tr><td class="px" style="padding:0 24px 20px 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.card }}" style="background-color:{{ c.card }}; border:1px solid {{ c.border }}; border-left:4px solid {{ c.accent }}; border-radius:8px;">
+      <tr><td style="padding:16px 18px; font-family:Arial, Helvetica, sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td valign="middle">
+            <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.accent }}; font-weight:bold;">&#127911;&nbsp; Sesli Brifing</div>
+            <div style="font-size:12px; color:{{ c.muted }}; padding-top:4px;">{{ media_box.speed }} hız{% if media_box.duration %} · {{ media_box.duration }}{% endif %}</div>
+          </td>
+          <td valign="middle" align="right">
+            {% if media_box.audio_url %}
+            <!--[if mso]>
+            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ media_box.audio_url }}" style="height:36px;v-text-anchor:middle;width:120px;" arcsize="16%" stroke="f" fillcolor="{{ c.accent }}">
+              <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;">&#9654; Dinle</center>
+            </v:roundrect>
+            <![endif]-->
+            <!--[if !mso]><!-->
+            <a href="{{ media_box.audio_url }}" target="_blank" style="display:inline-block; background-color:{{ c.accent }}; color:#ffffff; font-size:13px; font-weight:bold; padding:9px 18px; border-radius:6px; white-space:nowrap;">&#9654;&nbsp; Dinle</a>
+            <!--<![endif]-->
+            {% elif media_box.attached %}
+            <span style="font-size:12px; color:{{ c.muted }};">&#128206; Ses dosyası ekte</span>
+            {% endif %}
+          </td>
+        </tr></table>
+      </td></tr>
+    </table>
+  </td></tr>
+  {% endif %}
+
+  <!-- EXECUTIVE SUMMARY -->
+  <tr><td class="px" style="padding:0 24px 20px 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.card }}" style="background-color:{{ c.card }}; border:1px solid {{ c.border }}; border-radius:8px;">
+      <tr><td style="padding:18px 20px; font-family:Arial, Helvetica, sans-serif;">
+        <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.accent }}; font-weight:bold; padding-bottom:10px;">Executive Summary</div>
+        {% for s in b.executive_summary %}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td width="18" valign="top" style="font-size:14px; line-height:22px; color:{{ c.accent }};">&#9632;</td>
+          <td style="font-size:14px; line-height:22px; color:{{ c.text }}; padding-bottom:8px;">{{ s }}</td>
+        </tr></table>
+        {% endfor %}
+      </td></tr>
+    </table>
+  </td></tr>
+
+  {% macro news_section(title, items) %}
+  <tr><td class="px" style="padding:0 24px 20px 24px;">
+    <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.muted }}; font-weight:bold; padding:4px 0 10px 2px;">{{ title }}</div>
+    {% for n in items %}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.card }}" style="background-color:{{ c.card }}; border:1px solid {{ c.border }}; border-radius:8px; margin-bottom:8px;">
+      <tr><td style="padding:14px 18px; font-family:Arial, Helvetica, sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="font-size:15px; line-height:21px; font-weight:bold; color:{{ c.text }};">
+            {% if n.url %}<a href="{{ n.url }}" target="_blank" style="color:{{ c.text }}; text-decoration:none;">{{ n.headline }}</a>{% else %}{{ n.headline }}{% endif %}
+          </td>
+          {% if n.impact == "high" %}
+          <td align="right" valign="top" width="70" style="font-size:10px; font-weight:bold; color:{{ c.down }}; letter-spacing:1px;">YÜKSEK ETKİ</td>
+          {% endif %}
+        </tr></table>
+        <div style="font-size:13px; line-height:20px; color:{{ c.muted }}; padding-top:6px;">{{ n.summary }}</div>
+        <div style="font-size:11px; color:{{ c.accent }}; padding-top:8px; font-weight:bold;">{{ n.source }}</div>
+      </td></tr>
+    </table>
+    {% else %}
+    <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; color:{{ c.muted }};">Tier-1 kaynaklarda öne çıkan gelişme bulunmadı.</div>
+    {% endfor %}
+  </td></tr>
+  {% endmacro %}
+
+  {{ news_section("Küresel Gelişmeler", b.global_developments) }}
+  {{ news_section("Türkiye Gündemi", b.turkey_agenda) }}
+  {% if b.bank_watch %}
+  <!-- 4 BÜYÜK BANKA: her gün görünür; son iş gününden beri gelen duyurular YENİ -->
+  <tr><td class="px" style="padding:0 24px 20px 24px;">
+    <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.muted }}; font-weight:bold; padding:4px 0 10px 2px;">4 Büyük Banka · Duyurular, Basın, KAP ve Kampanyalar</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.card }}" style="background-color:{{ c.card }}; border:1px solid {{ c.border }}; border-radius:8px; font-family:Arial, Helvetica, sans-serif;">
+      {% for w in b.bank_watch %}
+      <tr>
+        <td valign="top" width="96" style="padding:14px 8px 14px 16px; font-size:13px; font-weight:bold; color:{{ c.text }}; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">{{ w.bank }}</td>
+        <td valign="top" style="padding:14px 16px 14px 8px; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">
+          {% if w.status == "ok" %}
+          <div style="font-size:14px; line-height:20px; color:{{ c.text }};">
+            {% if w.url %}<a href="{{ w.url }}" target="_blank" style="color:{{ c.text }}; text-decoration:none;">{{ w.headline }}</a>{% else %}{{ w.headline }}{% endif %}
+          </div>
+          {% if w.is_new and w.summary and w.summary != w.headline %}
+          <div style="font-size:13px; line-height:19px; color:{{ c.muted }}; padding-top:4px;">{{ w.summary }}</div>
+          {% endif %}
+          <div style="font-size:11px; padding-top:6px; color:{{ c.muted }};">
+            {% if w.is_new %}<span style="color:{{ c.up }}; font-weight:bold; letter-spacing:1px;">YENİ</span>&nbsp;·&nbsp;{% endif %}{{ w.published | date_short }}
+          </div>
+          {% endif %}
+          {% set fin = w.mentions | selectattr("category", "equalto", "finansal") | list %}
+          {% set corp = w.mentions | rejectattr("category", "equalto", "finansal") | list %}
+          {% for group, title in [(fin, "Basında ve KAP'ta"), (corp, "Promosyon, ödül ve sponsorluk")] %}
+          {% if group %}
+          <div style="font-size:10px; letter-spacing:1px; text-transform:uppercase; color:{{ c.muted }}; padding:12px 0 4px 0;">{{ title }}</div>
+          {% for m in group %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="12" valign="top" style="font-size:12px; line-height:18px; color:{{ c.accent }};">&#8250;</td>
+            <td style="font-size:12px; line-height:18px; color:{{ c.text }}; padding-bottom:4px;">
+              {% if m.url %}<a href="{{ m.url }}" target="_blank" style="color:{{ c.text }}; text-decoration:none;">{{ m.headline }}</a>{% else %}{{ m.headline }}{% endif %}
+              <div style="font-size:11px; color:{{ c.muted }}; padding-top:1px;">{% if m.category != "finansal" %}{{ m.category | capitalize }} · {% endif %}{{ m.source }} · {{ m.published | date_short }}</div>
+            </td>
+          </tr></table>
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+          {% if w.status == "ok" %}
+          {% elif w.status == "none" and not w.mentions %}
+          <div style="font-size:13px; color:{{ c.muted }};">Sayfada finansal açıdan önemli duyuru bulunamadı.</div>
+          {% elif w.status == "unavailable" %}
+          <div style="font-size:13px; color:{{ c.muted }};">Banka haber sayfasına bugün ulaşılamadı.</div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </td></tr>
+  {% elif b.banking_agenda %}{{ news_section("Bankacılık Gündemi", b.banking_agenda) }}{% endif %}
+
+  <!-- EKONOMİK TAKVİM -->
+  <tr><td class="px" style="padding:0 24px 20px 24px;">
+    <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.muted }}; font-weight:bold; padding:4px 0 10px 2px;">Günün Ekonomik Takvimi</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.card }}" style="background-color:{{ c.card }}; border:1px solid {{ c.border }}; border-radius:8px; font-family:Arial, Helvetica, sans-serif;">
+      <tr>
+        <td style="padding:10px 14px; font-size:10px; letter-spacing:1px; color:{{ c.muted }}; border-bottom:1px solid {{ c.border }};">SAAT</td>
+        <td style="padding:10px 6px; font-size:10px; letter-spacing:1px; color:{{ c.muted }}; border-bottom:1px solid {{ c.border }};">ÜLKE</td>
+        <td style="padding:10px 6px; font-size:10px; letter-spacing:1px; color:{{ c.muted }}; border-bottom:1px solid {{ c.border }};">GÖSTERGE</td>
+        <td class="cal-col-hide" align="right" style="padding:10px 6px; font-size:10px; letter-spacing:1px; color:{{ c.muted }}; border-bottom:1px solid {{ c.border }};">BEKLENTİ</td>
+        <td class="cal-col-hide" align="right" style="padding:10px 14px 10px 6px; font-size:10px; letter-spacing:1px; color:{{ c.muted }}; border-bottom:1px solid {{ c.border }};">ÖNCEKİ</td>
+      </tr>
+      {% for e in b.economic_calendar %}
+      <tr>
+        <td style="padding:10px 14px; font-size:13px; color:{{ c.text }}; font-weight:bold; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">{{ e.time }}</td>
+        <td style="padding:10px 6px; font-size:12px; color:{{ c.muted }}; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">{{ e.country }}</td>
+        <td style="padding:10px 6px; font-size:13px; color:{{ c.text }}; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">
+          {% if e.importance == "high" %}<span style="color:{{ c.down }};">&#9679;</span>{% elif e.importance == "medium" %}<span style="color:#F59E0B;">&#9679;</span>{% else %}<span style="color:{{ c.muted }};">&#9679;</span>{% endif %}
+          {{ e.event }}
+        </td>
+        <td class="cal-col-hide" align="right" style="padding:10px 6px; font-size:12px; color:{{ c.text }}; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">{{ e.forecast or "—" }}</td>
+        <td class="cal-col-hide" align="right" style="padding:10px 14px 10px 6px; font-size:12px; color:{{ c.muted }}; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">{{ e.previous or "—" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="padding:14px; font-size:13px; color:{{ c.muted }};">Bugün için takvimde önemli veri bulunmuyor.</td></tr>
+      {% endfor %}
+    </table>
+  </td></tr>
+
+  <!-- ALT BİLGİ -->
+  <tr><td class="px" style="padding:8px 24px 24px 24px; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:17px; color:{{ c.muted }};">
+    <div style="border-top:1px solid {{ c.border }}; padding-top:14px;">
+      Kaynaklar: {{ b.sources | join(", ") }}<br>
+      Bu bülten yalnızca bilgilendirme amaçlıdır; yatırım tavsiyesi niteliği taşımaz. Piyasa verileri bir önceki kapanış itibarıyladır.
+    </div>
+  </td></tr>
+
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+
+</td></tr>
+</table>
+</body>
+</html>
