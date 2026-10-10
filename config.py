@@ -22,9 +22,17 @@ def _parse_time(value: str) -> time:
     return time(int(hh), int(mm))
 
 
+# Varsayılan Tier-1 haber akışları (.env olmayan bulut ortamında da kullanılır; NEWS_FEEDS ile değiştirilebilir)
+DEFAULT_NEWS_FEEDS = ",".join([
+    "Bloomberg HT|https://www.bloomberght.com/rss",
+    "Foreks|https://www.foreks.com/rss",
+    "TCMB|https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Bottom+Menu/Diger/RSS/Basin+Duyurulari",
+])
+
+
 def _parse_feeds() -> List[Tuple[str, str]]:
     feeds: List[Tuple[str, str]] = []
-    for chunk in _env("NEWS_FEEDS").split(","):
+    for chunk in (_env("NEWS_FEEDS") or DEFAULT_NEWS_FEEDS).split(","):
         if "|" in chunk:
             name, url = chunk.split("|", 1)
             feeds.append((name.strip(), url.strip()))

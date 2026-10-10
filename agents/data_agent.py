@@ -287,8 +287,8 @@ def verify_content(content: CuratedContent, news: List[RawNews], markets: List[M
     """
     corpus = " ".join(f"{n.title} {n.summary}" for n in news).lower()
     corpus += " " + " ".join(
-        f"{m.value} {m.change_pct} {fmt_tr(m.value, m.decimals)} {fmt_tr(abs(m.change_pct or 0), 2)}" for m in markets
-        if m.value is not None)
+        f"{m.label} {m.value} {m.change_pct} {fmt_tr(m.value, m.decimals)} {fmt_tr(abs(m.change_pct or 0), 2)}"
+        for m in markets if m.value is not None).lower()
     known_urls = {n.url for n in news if n.url}
     texts = list(content.executive_summary)
     for item in content.global_developments + content.turkey_agenda + content.banking_agenda:

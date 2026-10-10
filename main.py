@@ -132,6 +132,8 @@ def run_pipeline(settings: Optional[Settings] = None, run_date: Optional[date] =
     if wait_for_dispatch:
         dispatch_at = _at(run_date, settings.dispatch_time, tz)
         video_deadline = min(_at(run_date, settings.video_deadline, tz), dispatch_at)
+        # İş geç başladıysa (ör. bulut zamanlayıcısı gecikmesi) ses/video hiç denenmeden atlanmasın
+        video_deadline = max(video_deadline, now + timedelta(seconds=240))
     else:  # test/manuel mod: saat beklenmez, videoya kısa bir pencere tanınır
         dispatch_at = now
         # Yapay zekâ metni (~40 sn) + seslendirme (~25 sn) için gerçekçi pay

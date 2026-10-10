@@ -59,3 +59,24 @@ def test_business_day_gate(monkeypatch, capsys):
     monkeypatch.setattr(main, "datetime", FakeDT)
     monkeypatch.setattr(main, "run_pipeline", lambda *a, **k: pytest.fail("hafta sonu çalışmamalı"))
     assert main.main(["--now", "--if-business-day"]) == 0
+
+
+def test_default_feeds_without_env(monkeypatch):
+    monkeypatch.delenv("NEWS_FEEDS", raising=False)
+    names = [n for n, _ in Settings().news_feeds]
+    assert {"Bloomberg HT", "Foreks", "TCMB"} <= set(names)
+
+
+def test_late_start_still_gives_video_a_window(settings, monkeypatch):
+    """Sabah zamanlaması geç başlarsa (son saat geçmiş) ses yine denenir."""
+    seen = {}
+
+    def fake_video(briefing_path, s, deadline, provider):
+        seen["deadline"] = deadline
+        from agents.video_agent import MediaResult
+        return MediaResult(status="skipped")
+
+    late = main.datetime.now(main.ZoneInfo(settings.timezone))
+    main.run_pipeline(settings, late.date(), mock=True, dry_run=True, wait_for_dispatch=True,
+                      video_runner=fake_video, prepare_only=True)
+    assert (seen["deadline"] - main.datetime.now(main.ZoneInfo(settings.timezone))).total_seconds() > 120

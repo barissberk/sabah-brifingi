@@ -42,7 +42,7 @@ env:
 
 jobs:
   brifing:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04     # sabit sürüm: ubuntu-latest geçişlerinden etkilenmez
     timeout-minutes: 100
     steps:
       - name: Çalışma türünü belirle
@@ -100,7 +100,10 @@ jobs:
         if: steps.mode.outputs.mode != 'kap-kopyasi'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python main.py --now --prepare-only ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
+        run: >-
+          python main.py --now --prepare-only
+          ${{ steps.mode.outputs.mode == 'hemen-gonder' && '--no-wait' || '' }}
+          ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
 
       - name: Sesi yayımla (GitHub Pages)
         if: steps.mode.outputs.mode != 'kap-kopyasi'
