@@ -117,6 +117,10 @@ kaydına yazılır. Yapay zekâ hata verirse bülten kural tabanlı yedekle yine
   haber; ayrıca "Promosyon, ödül ve sponsorluk" alt başlığında konu başına en yeni 1 haber (en fazla 2),
   bankanın kendi sitesindeki son 3 günlük kurumsal duyurular dahil.
   `BANK_MENTIONS_ENABLED=false` ile basın/KAP kısmı kapatılabilir.
+- **Basında QNB** (`PRESS_FOCUS_BANK=QNB`, boş bırakılırsa kapanır): 4 Büyük Banka'nın altında, başlığında "QNB"
+  geçen son 24 saatin (pazartesi 72 saat) tüm haberleri — Google Haberler araması (yedek: Bing), toplanan haber
+  akışları ve QNB grup şirketlerinin KAP bildirimleri. Aynı haberi veren siteler tek satırda birleşir (tanınmış
+  yayın öne alınır, "+N kaynak"); endeks sayfaları ve KAP kopyaları elenir; en fazla 12 satır.
 - **Piyasa verileri** yfinance (Yahoo) üzerinden alınır; USD/TRY için TCMB `today.xml` yedektir.
   Kurumsal kullanımda lisanslı bir veri sağlayıcısıyla değiştirilmesi önerilir.
 - **Ekonomik takvim**: `output/<tarih>/calendar.json` veya `fixtures/economic_calendar.json` dosyasından okunur

@@ -169,7 +169,8 @@ IMPORTANT_TERMS = {
     "milyon dolar": 2, "milyon abd": 2, "birleşme": 3, "satın al": 3, "devral": 3, "stratejik iş birliği": 2,
     "derecelendirme": 3, "kredi notu": 3, "temettü": 3, "kâr payı": 3, "faiz": 1, "dijital banka": 1,
     "vdmk": 3, "ihraç tavan": 2, "aktif büyüklü": 3, "fon büyüklü": 2, "rekabet kurulu": 2, "devr": 2, "hedef fiyat": 2,
-    "bilanço tarihi": 1, "pay geri alım": 1, "milyar euro": 2, "milyon euro": 2,
+    "bilanço tarihi": 1, "pay geri alım": 1, "milyar euro": 2, "milyon euro": 2, "milyar avro": 2,
+    "milyon avro": 2, "ihrac": 2, "bono": 2, "kredi sağla": 2, "finansman": 1,
 }
 # Kurumsal iletişim / etkinlik içerikleri: bülten için önemsiz
 MINOR_TERMS = ("konser", "sergi", "ödül", "award", "farkındalık", "kariyer", "program", "festival", "sanat",
@@ -293,16 +294,17 @@ def _trusted(outlet: str) -> bool:
 BING_NEWS_RSS = "https://www.bing.com/news/search"
 
 
-def _press_entries(bank: str) -> List[Tuple[str, str, Optional[str], Optional[tuple]]]:
+def _press_entries(bank: str, query: Optional[str] = None,
+                   days: int = MENTION_WINDOW_DAYS) -> List[Tuple[str, str, Optional[str], Optional[tuple]]]:
     """(başlık, yayın, link, yayın zamanı) listesi. Önce Google Haberler; erişilemezse (ör. bulut sunucularında
     503) Bing Haberler RSS yedeği kullanılır."""
     import feedparser
     from urllib.parse import urlencode
 
-    query = BANK_QUERIES[bank][0]
+    query = query or BANK_QUERIES[bank][0]
     sources = [
         ("Google Haberler", f"{GOOGLE_NEWS_RSS}?" + urlencode(
-            {"q": f"{query} when:{MENTION_WINDOW_DAYS}d", "hl": "tr", "gl": "TR", "ceid": "TR:tr"})),
+            {"q": f"{query} when:{days}d", "hl": "tr", "gl": "TR", "ceid": "TR:tr"})),
         ("Bing Haberler", f"{BING_NEWS_RSS}?" + urlencode(
             {"q": query, "format": "rss", "setlang": "tr-TR", "cc": "TR"})),
     ]
@@ -500,3 +502,86 @@ if __name__ == "__main__":
     args = ap.parse_args()
     for n in fetch_bank_news(all_items=args.all, enrich=not args.all, important_only=not args.include_minor):
         print(f"{n.published:%d.%m.%Y} | {n.bank:12} | önem {importance(n):2} | {n.title[:85]}\n    {n.url}")
+
+
+# ---------------------------------------------------------------------------
+# "Basında QNB": tek banka için o günün basın taraması (tüm haberler, kopyalar birleştirilmiş)
+# ---------------------------------------------------------------------------
+FOCUS_QUERIES = {"QNB": "QNB"}                       # geniş arama: QNB Türkiye, Finansleasing, Invest, Faktoring…
+FOCUS_KAP_TITLE = {"QNB": "QNB"}                     # KAP'ta grup şirketlerinin tümü
+FOCUS_LIMIT = 12
+FOCUS_JUNK = re.compile(r"canlı grafik|tradingview|endeksi\s*-\s*\d|^kap \*\*\*|hisse senedi fiyat", re.I)
+_STOP = {"ve", "ile", "için", "bir", "bu", "da", "de", "the", "türkiye", "türkiyenin", "oldu", "dan", "den"}
+
+
+def _tokens(title: str) -> set:
+    words = re.findall(r"[0-9a-zçğıöşü]+", title.lower().replace("'", "").replace("’", ""))
+    return {w for w in words if len(w) > 2 and w not in _STOP}
+
+
+def _similar(a: set, b: set) -> bool:
+    return bool(a and b) and len(a & b) / len(a | b) >= 0.5
+
+
+def focus_window_hours(now: datetime) -> int:
+    """Son 24 saat; pazartesi sabahı hafta sonunu da kapsamak için 72 saat."""
+    return 72 if now.astimezone(TR_TZ).weekday() == 0 else 24
+
+
+def fetch_press_focus(bank: str, now: datetime, raw_news: Optional[list] = None,
+                      kap_records: Optional[List[dict]] = None, press: bool = True) -> dict:
+    """Başlığında banka adı geçen o günkü haberler: basın araması + toplanan akışlar + KAP (grup şirketleri).
+
+    Aynı haberi veren siteler tek satırda birleşir (tanınmış yayın öne alınır, diğerleri "+N kaynak").
+    """
+    from agents.kap_source import KAP_DISCLOSURE_URL, NOISE_SUBJECTS, parse_publish_date
+
+    hours = focus_window_hours(now)
+    since = now - timedelta(hours=hours)
+    names = BANK_QUERIES[bank][1]
+    candidates = []   # (zaman, başlık, yayın, link, kategori)
+
+    def add(published: Optional[datetime], title: str, outlet: str, link: Optional[str], category=None):
+        title = re.sub(r"\s+", " ", title or "").strip()
+        if (not published or not (since <= published <= now + timedelta(hours=1)) or not title
+                or not any(n in title.lower() for n in names) or FOCUS_JUNK.search(title)):
+            return
+        candidates.append((published, short_headline(title, 120), outlet or "?", link,
+                           category if category is not None else classify_mention(title)))
+
+    if press:
+        for title, outlet, link, parsed in _press_entries(bank, FOCUS_QUERIES.get(bank), days=max(1, hours // 24)):
+            add(datetime(*parsed[:6], tzinfo=timezone.utc) if parsed else None, title, outlet, link)
+    for n in raw_news or []:
+        add(n.published, n.title, n.source, n.url)
+    for r in kap_records or []:
+        if FOCUS_KAP_TITLE.get(bank, bank).upper() not in (r.get("title") or "").upper():
+            continue
+        subject = (r.get("subject") or "").strip()
+        if any(x in subject.lower() + " " for x in NOISE_SUBJECTS):
+            continue
+        company = re.sub(r"\s+A\.\s?Ş\.?$", "", (r.get("title") or "").strip()).title()
+        detail = re.sub(r"\s+", " ", r.get("summary") or "").strip()
+        title = f"{company}: {detail or subject}"
+        add(parse_publish_date(r.get("publishDate", "")), title if any(n in title.lower() for n in names)
+            else f"QNB · {title}", "KAP", KAP_DISCLOSURE_URL.format(index=r.get("disclosureIndex")), "finansal")
+
+    # Kopyaları birleştir: benzer başlıklar tek kümede; temsilci = tanınmış yayın, yoksa en erken haber
+    clusters: List[dict] = []
+    for published, title, outlet, link, category in sorted(candidates, key=lambda c: c[0]):
+        tok = _tokens(title)
+        for c in clusters:
+            if _similar(tok, c["tokens"]):
+                c["outlets"].add(outlet)
+                if outlet != c["source"] and _trusted(outlet) and not _trusted(c["source"]):
+                    c.update(source=outlet, headline=title, url=link)
+                break
+        else:
+            clusters.append({"tokens": tok, "headline": title, "source": outlet, "url": link, "outlets": {outlet},
+                             "published": published, "category": category})
+    items = [{"headline": c["headline"], "source": c["source"], "url": c["url"],
+              "published": c["published"].astimezone(TR_TZ).isoformat(timespec="minutes"),
+              "also": len(c["outlets"]) - 1, "category": c["category"]}
+             for c in sorted(clusters, key=lambda c: c["published"], reverse=True)]
+    log.info("Basında %s: %d haber, %d başlık (son %d saat)", bank, len(candidates), len(items), hours)
+    return {"bank": bank, "window_hours": hours, "items": items[:FOCUS_LIMIT], "total": len(items)}

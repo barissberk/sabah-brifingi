@@ -179,5 +179,28 @@
       "summary": "",
       "is_new": false
     }
-  ]
+  ],
+  "press_focus": {
+    "bank": "QNB",
+    "window_hours": 24,
+    "total": 2,
+    "items": [
+      {
+        "headline": "[MOCK] QNB Türkiye, sürdürülebilir bono ihracını gerçekleştirdi",
+        "source": "EKOTÜRK",
+        "url": "https://example.com/mock/q1",
+        "published": "2026-10-09T09:00+03:00",
+        "also": 2,
+        "category": "finansal"
+      },
+      {
+        "headline": "[MOCK] QNB Türkiye iklim konferansında destekçi oldu",
+        "source": "Habertürk",
+        "url": "https://example.com/mock/q2",
+        "published": "2026-10-09T10:45+03:00",
+        "also": 0,
+        "category": null
+      }
+    ]
+  }
 }

@@ -290,3 +290,12 @@ def test_same_audio_file_attached_once(briefing_path, settings, tmp_path):
 def test_no_cds_in_markets(briefing_path):
     assert all(m.key != "cds" for m in data_agent.load_briefing(briefing_path).markets)
     assert "cds" not in data_agent.INDICATORS
+
+def test_press_focus_section_rendered(briefing_path, settings):
+    b = data_agent.load_briefing(briefing_path)
+    html = html_agent.render(b, settings)
+    assert "Basında QNB" in html and "+2 kaynak" in html and "09.10 09:00" in html
+    b.press_focus.items, b.press_focus.total = [], 0
+    assert "basında QNB haberi bulunamadı" in html_agent.render(b, settings)
+    b.press_focus = None
+    assert "Basında QNB" not in html_agent.render(b, settings)

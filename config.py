@@ -69,6 +69,7 @@ class Settings:
     anthropic_model: str = field(default_factory=lambda: _env("ANTHROPIC_MODEL", "claude-opus-5-5"))
     news_feeds: List[Tuple[str, str]] = field(default_factory=_parse_feeds)
     news_lookback_hours: int = field(default_factory=lambda: int(_env("NEWS_LOOKBACK_HOURS", "18")))
+    press_focus_bank: str = field(default_factory=lambda: _env("PRESS_FOCUS_BANK", "QNB"))   # boş = bölüm kapalı
     bank_mentions_enabled: bool = field(default_factory=lambda: _env("BANK_MENTIONS_ENABLED", "true").lower() == "true")
     bank_news_enabled: bool = field(default_factory=lambda: _env("BANK_NEWS_ENABLED", "true").lower() == "true")
     kap_enabled: bool = field(default_factory=lambda: _env("KAP_ENABLED", "true").lower() == "true")

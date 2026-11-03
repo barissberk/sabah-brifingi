@@ -244,3 +244,37 @@ def test_press_falls_back_to_bing_when_google_unavailable(monkeypatch):
     out = bank_news.fetch_press_mentions("Akbank", date(2026, 10, 10))
     assert [(m["headline"], m["source"]) for m in out] == [("Akbank, 50 milyon Euro tahvil ihraç edecek",
                                                              "Investing.com Türkiye")]
+
+
+# --- "Basında QNB" -----------------------------------------------------------
+def test_press_focus_merges_copies_and_filters(monkeypatch):
+    from datetime import datetime, timezone
+
+    now = datetime(2026, 11, 3, 15, 0, tzinfo=timezone.utc)                      # salı
+    entries = [
+        ("QNB Türkiye, COP31'de İklim Destekçisi Oldu", "Marmara Yaşam", "u1", (2026, 11, 3, 6, 30, 0)),
+        ("QNB Türkiye, COP31'de İklim Destekçisi Oldu", "Habertürk", "u2", (2026, 11, 3, 6, 9, 0)),
+        ("Qnb Türkiye, Cop31'de İklim Destekçisi Oldu", "RayHaber", "u3", (2026, 11, 3, 5, 37, 0)),
+        ("EBRD'den QNB Finansleasing'e 25 milyon avro kredi", "Haber 7", "u4", (2026, 11, 3, 10, 49, 0)),
+        ("KAP *** QNB FAKTORİNG A.Ş. *** Pay Dışında Bildirim", "GZT", "u5", (2026, 11, 3, 4, 4, 0)),   # KAP kopyası
+        ("QNB-TEMIZ-ENERJI - QNBTE Endeksi - 3 Kasım 2026", "Mynet", "u6", (2026, 11, 3, 6, 23, 0)),  # endeks sayfası
+        ("Apple'da iPhone geliri arttı", "Para Ajansı", "u7", (2026, 11, 3, 11, 45, 0)),            # QNB başlıkta yok
+        ("QNB Finansbank Anadolu Buluşmaları", "Haber 7", "u8", (2026, 11, 1, 15, 52, 0)),          # 24 saatten eski
+    ]
+    monkeypatch.setattr(bank_news, "_press_entries", lambda bank, query=None, days=3: entries)
+    kap = [{"disclosureIndex": 9, "title": "QNB BANK A.Ş.", "subject": "Özel Durum Açıklaması (Genel)",
+            "summary": "Sürdürülebilir bono ihracı", "publishDate": "03.11.2026 09:30:00"}]
+    out = bank_news.fetch_press_focus("QNB", now, kap_records=kap)
+    heads = [i["headline"] for i in out["items"]]
+    assert len(heads) == 3 and out["window_hours"] == 24
+    cop = next(i for i in out["items"] if "COP31" in i["headline"])
+    assert cop["source"] == "Habertürk" and cop["also"] == 2                     # tanınmış yayın temsilci, +2 kaynak
+    assert next(i for i in out["items"] if "EBRD" in i["headline"])["category"] == "finansal"
+    assert any(i["source"] == "KAP" and i["url"].endswith("/9") for i in out["items"])
+
+
+def test_press_focus_monday_covers_weekend():
+    from datetime import datetime, timezone
+
+    assert bank_news.focus_window_hours(datetime(2026, 11, 2, 4, 30, tzinfo=timezone.utc)) == 72   # pazartesi
+    assert bank_news.focus_window_hours(datetime(2026, 11, 3, 4, 30, tzinfo=timezone.utc)) == 24

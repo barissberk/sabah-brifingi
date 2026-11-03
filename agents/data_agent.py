@@ -428,6 +428,7 @@ def run(settings: Optional[Settings] = None, run_date: Optional[date] = None, mo
         save_raw_news(news, out_dir / "raw_news.json")
         content = curate(news, markets, settings, load_calendar_hint(settings, run_date))
         briefing = build_briefing(markets, content, run_date, bank_watch_fetcher(settings, run_date))
+        briefing.press_focus = fetch_press_focus(settings, news, run_date)
 
     path = out_dir / "briefing.json"
     path.write_text(briefing.model_dump_json(indent=2), encoding="utf-8")
@@ -447,6 +448,24 @@ def fetch_bank_watch(settings: Settings, run_date: date) -> List[dict]:
     except Exception as exc:  # noqa: BLE001
         log.warning("4 Büyük Banka bölümü hazırlanamadı: %s", exc)
         return []
+
+
+def fetch_press_focus(settings: Settings, news: List[RawNews], run_date: date):
+    """"Basında QNB" bölümü. Hata bülteni durdurmaz."""
+    from models import PressFocus
+
+    if not settings.press_focus_bank:
+        return None
+    try:
+        from agents.bank_news import fetch_press_focus as _focus, load_kap_records
+
+        data = _focus(settings.press_focus_bank, datetime.now(timezone.utc), raw_news=news,
+                      kap_records=load_kap_records(settings.output_dir, run_date) if settings.kap_enabled else [],
+                      press=settings.bank_mentions_enabled)
+        return PressFocus(**data)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Basında %s bölümü hazırlanamadı: %s", settings.press_focus_bank, exc)
+        return None
 
 
 def save_raw_news(news: List[RawNews], path: Path) -> None:

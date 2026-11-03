@@ -69,6 +69,23 @@ class BankWatchItem(BaseModel):
     mentions: List[BankMention] = []     # son günlerde basında ve KAP'ta
 
 
+class PressItem(BaseModel):
+    headline: str
+    source: str
+    url: Optional[str] = None
+    published: Optional[str] = None      # ISO, TR saati
+    also: int = 0                        # aynı haberi veren diğer yayın sayısı
+    category: Optional[str] = None       # finansal | promosyon | ödül | sponsorluk | None
+
+
+class PressFocus(BaseModel):
+    """"Basında QNB" bölümü."""
+    bank: str
+    window_hours: int = 24
+    items: List[PressItem] = []
+    total: int = 0
+
+
 class Briefing(BaseModel):
     date: str = Field(description="YYYY-MM-DD")
     generated_at: str
@@ -79,6 +96,7 @@ class Briefing(BaseModel):
     economic_calendar: List[CalendarEvent]
     banking_agenda: List[NewsItem] = []
     bank_watch: List[BankWatchItem] = []
+    press_focus: Optional[PressFocus] = None
     sources: List[str] = []
     unverified_figures: List[str] = []    # kaynakta doğrulanamayan rakamlar (yapay zekâ denetimi)
 

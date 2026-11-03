@@ -184,6 +184,29 @@
   </td></tr>
   {% elif b.banking_agenda %}{{ news_section("Bankacılık Gündemi", b.banking_agenda) }}{% endif %}
 
+  {% if b.press_focus %}
+  <!-- BASINDA QNB: o günün basın taraması (kopyalar birleştirilmiş) -->
+  <tr><td class="px" style="padding:0 24px 20px 24px;">
+    <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.muted }}; font-weight:bold; padding:4px 0 10px 2px;">
+      Basında {{ b.press_focus.bank }} <span style="font-weight:normal; letter-spacing:1px;">· son {{ b.press_focus.window_hours }} saat{% if b.press_focus.total %} · {{ b.press_focus.total }} haber{% endif %}</span>
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.card }}" style="background-color:{{ c.card }}; border:1px solid {{ c.border }}; border-left:4px solid {{ c.accent }}; border-radius:8px; font-family:Arial, Helvetica, sans-serif;">
+      {% for p in b.press_focus.items %}
+      <tr><td style="padding:11px 16px; {% if not loop.last %}border-bottom:1px solid {{ c.border }};{% endif %}">
+        <div style="font-size:13px; line-height:19px; color:{{ c.text }};">
+          {% if p.url %}<a href="{{ p.url }}" target="_blank" style="color:{{ c.text }}; text-decoration:none;">{{ p.headline }}</a>{% else %}{{ p.headline }}{% endif %}
+        </div>
+        <div style="font-size:11px; color:{{ c.muted }}; padding-top:3px;">
+          {% if p.category %}<span style="color:{{ c.accent }};">{{ p.category | capitalize }}</span> · {% endif %}{{ p.source }}{% if p.also %} +{{ p.also }} kaynak{% endif %} · {{ p.published[8:10] }}.{{ p.published[5:7] }} {{ p.published[11:16] }}
+        </div>
+      </td></tr>
+      {% else %}
+      <tr><td style="padding:14px 16px; font-size:13px; color:{{ c.muted }};">Son {{ b.press_focus.window_hours }} saatte basında {{ b.press_focus.bank }} haberi bulunamadı.</td></tr>
+      {% endfor %}
+    </table>
+  </td></tr>
+  {% endif %}
+
   <!-- EKONOMİK TAKVİM -->
   <tr><td class="px" style="padding:0 24px 20px 24px;">
     <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:{{ c.muted }}; font-weight:bold; padding:4px 0 10px 2px;">Günün Ekonomik Takvimi</div>
