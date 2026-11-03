@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 import requests
 
@@ -130,40 +130,77 @@ def news_cutoff(now: datetime, lookback_hours: int) -> datetime:
     return now - timedelta(hours=lookback_hours + extra)
 
 
+# Linkin ilk yol bölümü bu kategorilerdense haber alınmaz (ör. dunya.com/spor/…): finans dışı içerik
+EXCLUDED_URL_SECTIONS = {"spor", "magazin", "foto-galeri", "video-galeri", "galeri", "yasam", "kultur-sanat",
+                         "saglik", "egitim", "astroloji", "otomobil", "teknoloji-yasam", "seyahat"}
+
+
+def _excluded_section(url: Optional[str]) -> bool:
+    from urllib.parse import urlparse
+
+    return bool(url) and urlparse(url).path.strip("/").split("/")[0].lower() in EXCLUDED_URL_SECTIONS
+
+
+SEARCH_PREFIX = "gnews:"   # RSS'i olmayan/engelleyen siteler: "Kaynak|gnews:site:ornek.com/ekonomi"
+
+
+def _search_feed_urls(query: str, lookback_hours: int) -> List[Tuple[str, str]]:
+    """Site araması için sırayla denenecek akışlar: Google Haberler, erişilemezse Bing Haberler."""
+    from urllib.parse import urlencode
+
+    days = max(1, -(-lookback_hours // 24))
+    return [
+        ("Google Haberler", "https://news.google.com/rss/search?" + urlencode(
+            {"q": f"{query} when:{days}d", "hl": "tr", "gl": "TR", "ceid": "TR:tr"})),
+        ("Bing Haberler", "https://www.bing.com/news/search?" + urlencode(
+            {"q": query, "format": "rss", "setlang": "tr-TR", "cc": "TR"})),
+    ]
+
+
+def _read_feed(source: str, url: str, lookback_hours: int):
+    """RSS veya site araması; (girdiler, arama mı) döndürür. Okunamazsa None."""
+    import feedparser
+
+    candidates = (_search_feed_urls(url[len(SEARCH_PREFIX):], lookback_hours) if url.startswith(SEARCH_PREFIX)
+                  else [("RSS", url)])
+    for kind, u in candidates:
+        try:
+            resp = requests.get(u, timeout=HTTP_TIMEOUT, headers={"User-Agent": "Mozilla/5.0 MorningBriefing/1.0"})
+            resp.raise_for_status()
+            return feedparser.parse(resp.content).entries, url.startswith(SEARCH_PREFIX)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("%s akışı okunamadı (%s): %s", source, kind, exc)
+    return None
+
+
 def fetch_news(settings: Settings, now: Optional[datetime] = None) -> List[RawNews]:
-    """Yapılandırılmış RSS/Atom akışlarından haber penceresindeki haberleri çeker.
+    """Yapılandırılmış RSS/Atom akışlarından ve site aramalarından haber penceresindeki haberleri çeker.
 
     Tarihi okunamayan haberler elenir; aksi halde eski duyurular bültene sızabilir.
     """
-    import feedparser
-
     now = now or datetime.now(timezone.utc)
     cutoff = news_cutoff(now, settings.news_lookback_hours)
     items: List[RawNews] = []
     for source, url in settings.news_feeds:
-        try:
-            resp = requests.get(url, timeout=HTTP_TIMEOUT, headers={"User-Agent": "Mozilla/5.0 MorningBriefing/1.0"})
-            resp.raise_for_status()
-            feed = feedparser.parse(resp.content)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("%s akışı okunamadı: %s", source, exc)
+        result = _read_feed(source, url, settings.news_lookback_hours)
+        if result is None:
             continue
+        entries, is_search = result
         kept = 0
-        for entry in feed.entries:
+        for entry in entries:
             published = parse_entry_date(entry)
-            if published is None or published < cutoff or published > now + timedelta(hours=1):
+            if (published is None or published < cutoff or published > now + timedelta(hours=1)
+                    or _excluded_section(entry.get("link"))):
                 continue
+            title = _strip_html(entry.get("title", ""))
+            summary = _strip_html(entry.get("summary", ""))[:600]
+            if is_search:   # arama sonuçlarında başlığın sonundaki " - Yayın Adı" ve tekrar eden özet atılır
+                title = re.sub(r"\s+-\s+[^-]{2,40}$", "", title).strip()
+                summary = "" if summary.startswith(title[:40]) else summary
             kept += 1
-            items.append(
-                RawNews(
-                    title=_strip_html(entry.get("title", "")),
-                    summary=_strip_html(entry.get("summary", ""))[:600],
-                    source=source,
-                    url=entry.get("link"),
-                    published=published,
-                )
-            )
-        log.info("%s: %d/%d haber pencere içinde", source, kept, len(feed.entries))
+            items.append(RawNews(title=title, summary=summary, source=source, url=entry.get("link"),
+                                 published=published))
+        log.info("%s: %d/%d haber pencere içinde", source, kept, len(entries))
     if settings.kap_enabled:
         from agents.kap_source import fetch_kap_news
 

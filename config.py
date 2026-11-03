@@ -27,6 +27,12 @@ DEFAULT_NEWS_FEEDS = ",".join([
     "Bloomberg HT|https://www.bloomberght.com/rss",
     "Foreks|https://www.foreks.com/rss",
     "TCMB|https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Bottom+Menu/Diger/RSS/Basin+Duyurulari",
+    "Investing.com|https://tr.investing.com/rss/news_14.rss",      # ekonomi
+    "Investing.com|https://tr.investing.com/rss/news_25.rss",      # hisse senetleri
+    "Dünya|https://www.dunya.com/rss",
+    # RSS'i olmayan / erişimi engelleyen siteler: Google Haberler site araması (erişilemezse Bing)
+    "Bigpara|gnews:site:bigpara.hurriyet.com.tr",
+    "Gazete Oksijen|gnews:site:gazeteoksijen.com/ekonomi",
 ])
 
 

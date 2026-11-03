@@ -107,7 +107,7 @@ def snapshot(settings: Optional[Settings] = None, raw: Optional[List[dict]] = No
     merged.update({r["disclosureIndex"]: r for r in raw if "disclosureIndex" in r})
     path.write_text(json.dumps(list(merged.values()), ensure_ascii=False), encoding="utf-8")
     log.info("KAP kopyası kaydedildi: %s (%d bildirim)", path.name, len(merged))
-    _prune(settings, keep_days=7)
+    _prune(settings, keep_days=7, today=today)
     return path
 
 
@@ -120,8 +120,10 @@ def _load(path: Path) -> List[dict]:
         return []
 
 
-def _prune(settings: Settings, keep_days: int) -> None:
-    cutoff = datetime.now(TR_TZ).date() - timedelta(days=keep_days)
+def _prune(settings: Settings, keep_days: int, today: Optional[date] = None) -> None:
+    """Yazılan kopyanın gününe göre eski kopyaları siler (gerçek saate değil; testler ve geçmiş tarihli
+    çalışmalar kendi yazdıkları kopyayı silmesin)."""
+    cutoff = (today or datetime.now(TR_TZ).date()) - timedelta(days=keep_days)
     for f in _cache_dir(settings).glob("*.json"):
         try:
             if date.fromisoformat(f.stem) < cutoff:

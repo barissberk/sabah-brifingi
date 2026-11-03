@@ -233,7 +233,7 @@ TRUSTED_OUTLETS = (
     "anadolu ajansı", "aa", "bloomberght", "bloomberg ht", "bloomberg", "reuters", "investing.com", "dünya",
     "ekonomim", "habertürk", "haberturk", "ntv", "cnn türk", "milliyet", "hürriyet", "sabah", "ekonomi gazetesi",
     "paratic", "ekotürk", "foreks", "borsa gündem", "borsa gundem", "matriks", "patronlar dünyası", "uzmanpara",
-    "para analiz", "fortune türkiye", "capital", "yeni şafak", "dha", "iha",
+    "para analiz", "fortune türkiye", "capital", "yeni şafak", "dha", "iha", "bigpara", "gazete oksijen",
 )
 MENTION_WINDOW_DAYS = 3
 MAX_MENTIONS = 3            # finansal haber (basın + KAP)

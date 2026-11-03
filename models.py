@@ -6,7 +6,8 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, PrivateAttr
 
 # Sadece bu kaynaklardan gelen haberler bültene girer.
-TIER1_SOURCES = {"Bloomberg", "Bloomberg HT", "Reuters", "Foreks", "KAP", "TCMB"}
+TIER1_SOURCES = {"Bloomberg", "Bloomberg HT", "Reuters", "Foreks", "KAP", "TCMB",
+                 "Investing.com", "Dünya", "Bigpara", "Gazete Oksijen"}
 # Bankaların kendi kurumsal haberleri: kendileri hakkında birincil kaynak
 BANK_SOURCES = {"Garanti BBVA", "Akbank", "Yapı Kredi", "QNB"}
 TIER1_SOURCES |= BANK_SOURCES
