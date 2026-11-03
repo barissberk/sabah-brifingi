@@ -76,3 +76,15 @@ def test_non_finance_sections_are_skipped():
     assert not data_agent._excluded_section("https://www.dunya.com/ekonomi/abdde-imalat-sanayi")
     assert not data_agent._excluded_section("https://www.dunya.com/finans/haberler/borsa")
     assert not data_agent._excluded_section(None)
+
+
+def test_verification_accepts_written_out_numbers():
+    from agents.data_agent import RawNews, verify_content
+    from models import CuratedContent, NewsItem
+
+    news = [RawNews("İhracat rekor", "ihracat 25 milyar 885 milyon dolara ulaştı; 2 bin 285 MW kapasite", "Foreks",
+                    "https://k.test/1", None)]
+    content = CuratedContent(
+        executive_summary=["İhracat 25,885 milyar dolar; 2.285 MW kapasite; enflasyon %31"],
+        global_developments=[], turkey_agenda=[], economic_calendar=[], banking_agenda=[])
+    assert verify_content(content, news, []) == ["31"]                     # yalnızca kaynakta olmayan rakam

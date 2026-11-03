@@ -326,6 +326,7 @@ def verify_content(content: CuratedContent, news: List[RawNews], markets: List[M
     corpus += " " + " ".join(
         f"{m.label} {m.value} {m.change_pct} {fmt_tr(m.value, m.decimals)} {fmt_tr(abs(m.change_pct or 0), 2)}"
         for m in markets if m.value is not None).lower()
+    corpus += " " + _numeric_forms(corpus)
     known_urls = {n.url for n in news if n.url}
     texts = list(content.executive_summary)
     for item in content.global_developments + content.turkey_agenda + content.banking_agenda:
@@ -337,6 +338,17 @@ def verify_content(content: CuratedContent, news: List[RawNews], markets: List[M
     if unverified:
         log.warning("Kaynakta doğrulanamayan rakam/tarih: %s", ", ".join(unverified))
     return unverified
+
+
+def _numeric_forms(text: str) -> str:
+    """Yazıyla karışık sayıların rakam karşılıkları: '25 milyar 885 milyon' → '25,885', '2 bin 285' → '2.285'.
+
+    Yapay zekâ bu tür ifadeleri rakama çevirdiğinde denetim yanlış alarm vermesin diye korpusa eklenir.
+    """
+    forms = [f"{a},{int(b):03d}" for a, b in re.findall(r"(\d+)\s+milyar\s+(\d{1,3})\s+milyon", text)]
+    forms += [f"{a},{int(b):03d}" for a, b in re.findall(r"(\d+)\s+milyon\s+(\d{1,3})\s+bin", text)]
+    forms += [f"{a}.{int(b):03d}" for a, b in re.findall(r"(\d+)\s+bin\s+(\d{1,3})\b", text)]
+    return " ".join(forms)
 
 
 def fmt_tr(value: Optional[float], decimals: int) -> str:

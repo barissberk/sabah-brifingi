@@ -91,6 +91,12 @@ kaydına yazılır. Yapay zekâ hata verirse bülten kural tabanlı yedekle yine
 
 ## Veri kaynakları — dikkat edilmesi gerekenler
 
+- **Haber akışları** (`config.py` → `DEFAULT_NEWS_FEEDS`, `.env`'de `NEWS_FEEDS` ile değiştirilebilir):
+  Bloomberg HT, Foreks, TCMB, Investing.com (ekonomi + hisse), Dünya (RSS); Bigpara ve Gazete Oksijen
+  (RSS'leri olmadığı/engelli olduğu için `gnews:site:…` biçiminde Google Haberler site araması; erişilemezse
+  Bing Haberler). Linki spor/magazin/galeri gibi finans dışı bölümlerdeki haberler alınmaz. Aynı olayı anlatan
+  haberler yapay zekâ tarafından tek maddede birleştirilir ve tüm kaynakları listelenir.
+
 - **Bloomberg / Reuters** içeriği lisanslıdır; kurumunuzun lisanslı feed URL'lerini `.env`'e girin.
 - **KAP**: Resmi RSS/API yoktur; kap.org.tr'nin kendi sayfaları için kullandığı bildirim listesi servisi okunur
   ([agents/kap_source.py](agents/kap_source.py)). Servis yalnızca o günün bildirimlerini verdiğinden zamanlayıcı her
