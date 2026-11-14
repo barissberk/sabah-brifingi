@@ -25,6 +25,11 @@ Mac kapalı olsa da çalışır. [.github/workflows/sabah-brifingi.yml](.github/
 |---|---|
 | Hafta içi 07:15 | Bülten + ses/video hazırlanır, ses GitHub Pages'e yayımlanır, **08:15**'te e-posta gönderilir (resmi tatillerde atlanır) |
 | Her gün 18:30, 23:50 | KAP bildirim kopyası (önbellekte saklanır) |
+
+**Tetikleme:** GitHub'ın zamanlayıcısı yoğunlukta işleri saatlerce geciktirebildiği için (Kasım 2026'da 7–8 saat
+gözlendi) birincil tetikleyici **cron-job.org**'dur (`make cron-setup`; GitHub fine-grained anahtarı: yalnızca bu
+depo, *Actions: Read and write*). GitHub zamanlayıcısı yedek olarak kalır; bülten gönderildiğinde gh-pages'e
+`durum/<tarih>.gonderildi` işareti yazılır ve aynı gün başlayan diğer sabah çalışmaları atlanır (çift e-posta olmaz).
 | Elle "Run workflow" | `hemen-gonder`: beklemeden çalıştır ve gönder · `deneme`: e-posta göndermeden ve ses yayımlamadan çalıştır (kayıt kontrolü) |
 
 Kurulum: GitHub CLI ile giriş yapıp (`gh auth login`) `make cloud-setup`. Betik depoyu oluşturur, anahtarları

@@ -1,21 +1,23 @@
 # Sabah Finans Brifingi — bulutta (GitHub Actions) çalışır; Mac'e bağlı değildir.
 #
-#  Hafta içi 07:15 TSİ : bülten + ses/video hazırlanır, ses GitHub Pages'e yayımlanır, 08:15'te e-posta gönderilir
-#  Her gün 18:30 / 23:50: KAP bildirim kopyası (KAP servisi yalnızca o günün bildirimlerini verir)
+#  Tetikleme (birincil): cron-job.org dakikası dakikasına "workflow_dispatch" gönderir
+#     Hafta içi 07:15 TSİ  → mode=sabah-zamanlamasi (hazırla → sesi yayımla → 08:15'te gönder)
+#     Her gün 18:30, 23:50 → mode=kap-kopyasi
+#  Tetikleme (yedek): aşağıdaki GitHub zamanlayıcısı. GitHub yoğunlukta işleri saatlerce geciktirebildiği için
+#     yalnızca yedektir; o gün bülten zaten gönderildiyse (gh-pages'teki durum/<tarih>.gonderildi) hiçbir şey yapmaz.
 #  Elle ("Run workflow"): hemen-gonder = beklemeden çalıştırıp gönder (test için)
 #                         deneme       = beklemeden çalıştır; e-posta GÖNDERME, ses yayımlama (kayıtları kontrol için)
 #
 # Gerekli Secrets: GEMINI_API_KEY, SMTP_USER (Gmail adresi), SMTP_PASSWORD (Google uygulama şifresi)
 # İsteğe bağlı Secret: SUBSCRIBERS (virgülle; boşsa SMTP_USER'a gönderilir)
-# Türkiye UTC+3 (yaz saati yok) → cron saatleri UTC'dir. GitHub zamanlamaları birkaç dakika gecikebilir;
-# bu yüzden hazırlık 07:15'te başlar, gönderim kod içinde tam 08:15'e ayarlanır.
+# Türkiye UTC+3 (yaz saati yok) → cron saatleri UTC'dir.
 name: Sabah Finans Brifingi
 
 on:
   schedule:
-    - cron: "15 4 * * 1-5"   # 07:15 TSİ — sabah bülteni
-    - cron: "30 15 * * *"    # 18:30 TSİ — KAP akşam kopyası
-    - cron: "50 20 * * *"    # 23:50 TSİ — KAP gece kopyası
+    - cron: "15 4 * * 1-5"   # 07:15 TSİ — sabah bülteni (yedek)
+    - cron: "30 15 * * *"    # 18:30 TSİ — KAP akşam kopyası (yedek)
+    - cron: "50 20 * * *"    # 23:50 TSİ — KAP gece kopyası (yedek)
   workflow_dispatch:
     inputs:
       mode:
@@ -25,10 +27,14 @@ on:
         default: hemen-gonder
 
 permissions:
-  contents: write            # ses dosyalarını gh-pages dalına yazmak için
+  contents: write            # ses dosyalarını ve gönderim işaretini gh-pages dalına yazmak için
 
+# Sabah bülteni hangi yoldan tetiklenirse tetiklensin aynı gruptadır: ikinci tetikleme sıraya girer,
+# başladığında günün işaretini görür ve atlar (çift e-posta olmaz).
 concurrency:
-  group: brifing-${{ github.event.schedule || inputs.mode }}
+  group: >-
+    brifing-${{ (github.event.schedule == '15 4 * * 1-5' || inputs.mode == 'sabah-zamanlamasi') && 'sabah'
+    || github.event.schedule || inputs.mode }}
   cancel-in-progress: false
 
 env:
@@ -53,35 +59,11 @@ jobs:
           elif [ "${{ github.event.schedule }}" = "15 4 * * 1-5" ]; then m="sabah-zamanlamasi"
           else m="kap-kopyasi"; fi
           echo "mode=$m" >> "$GITHUB_OUTPUT"
-          echo "Çalışma türü: $m"
+          echo "Çalışma türü: $m (tetikleyen: ${{ github.event_name }})"
 
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Bağımlılıklar
-        run: pip install -q -r requirements.txt
-
-      - name: KAP önbelleğini geri yükle
-        uses: actions/cache/restore@v4
-        with:
-          path: output/_kap_cache
-          key: kap-${{ github.run_id }}
-          restore-keys: kap-
-
-      # ---------------- KAP kopyası ----------------
-      - name: KAP kopyası al
-        if: steps.mode.outputs.mode == 'kap-kopyasi'
-        run: python -m agents.kap_source --snapshot
-
-      # ---------------- Bülten ----------------
-      - name: Yazı tipleri (video görseli)
-        if: steps.mode.outputs.mode != 'kap-kopyasi'
-        run: sudo apt-get install -y -qq fonts-dejavu-core > /dev/null
-
+      # ---------------- Bülten: yayın dalı + günlük gönderim işareti ----------------
       - name: Yayın dalını hazırla (gh-pages)
         if: steps.mode.outputs.mode != 'kap-kopyasi'
         run: |
@@ -97,8 +79,47 @@ jobs:
           echo "MEDIA_PUBLISH_DIR=$PWD/site" >> "$GITHUB_ENV"
           echo "MEDIA_PUBLIC_BASE_URL=https://${owner}.github.io/${{ github.event.repository.name }}" >> "$GITHUB_ENV"
 
+      - name: Bugün gönderildi mi?
+        id: gate
+        run: |
+          marker="site/durum/$(date +%F).gonderildi"
+          if [ "${{ steps.mode.outputs.mode }}" = "sabah-zamanlamasi" ] && [ -f "$marker" ]; then
+            echo "Bugünün bülteni zaten gönderilmiş ($(cat "$marker")) — bu çalışma atlanıyor."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.go == 'true'
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Bağımlılıklar
+        if: steps.gate.outputs.go == 'true'
+        run: pip install -q -r requirements.txt
+
+      - name: KAP önbelleğini geri yükle
+        if: steps.gate.outputs.go == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: output/_kap_cache
+          key: kap-${{ github.run_id }}
+          restore-keys: kap-
+
+      # ---------------- KAP kopyası ----------------
+      - name: KAP kopyası al
+        if: steps.mode.outputs.mode == 'kap-kopyasi'
+        run: python -m agents.kap_source --snapshot
+
+      # ---------------- Bülten ----------------
+      - name: Yazı tipleri (video görseli)
+        if: steps.mode.outputs.mode != 'kap-kopyasi' && steps.gate.outputs.go == 'true'
+        run: sudo apt-get install -y -qq fonts-dejavu-core > /dev/null
+
       - name: Hazırla (bülten, ses, video)
-        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        if: steps.mode.outputs.mode != 'kap-kopyasi' && steps.gate.outputs.go == 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: >-
@@ -107,16 +128,19 @@ jobs:
           ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
 
       - name: Sesi yayımla (GitHub Pages)
-        if: steps.mode.outputs.mode != 'kap-kopyasi' && steps.mode.outputs.mode != 'deneme'
+        if: >-
+          steps.mode.outputs.mode != 'kap-kopyasi' && steps.mode.outputs.mode != 'deneme'
+          && steps.gate.outputs.go == 'true'
         run: |
           cd site
           git add -A
           if git diff --cached --quiet; then echo "Yayımlanacak yeni ses yok"; exit 0; fi
           git commit -q -m "Sesli brifing: $(date +%F)"
+          git pull -q --rebase origin gh-pages || true
           git push -q origin gh-pages
 
       - name: Gönder (08:15)
-        if: steps.mode.outputs.mode != 'kap-kopyasi'
+        if: steps.mode.outputs.mode != 'kap-kopyasi' && steps.gate.outputs.go == 'true'
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
@@ -128,16 +152,33 @@ jobs:
           ${{ steps.mode.outputs.mode == 'deneme' && '--dry-run' || '' }}
           ${{ steps.mode.outputs.mode == 'sabah-zamanlamasi' && '--if-business-day' || '' }}
 
+      - name: Gönderim işaretini yaz
+        if: >-
+          success() && steps.mode.outputs.mode == 'sabah-zamanlamasi' && steps.gate.outputs.go == 'true'
+        run: |
+          report="output/$(date +%F)/run_report.json"
+          if ! python -c "import json,sys; r=json.load(open('$report')); sys.exit(0 if r.get('dispatch',{}).get('sent') else 1)" 2>/dev/null; then
+            echo "Gönderim yapılmadı (ör. resmi tatil) — işaret yazılmadı."; exit 0
+          fi
+          mkdir -p site/durum
+          echo "$(date '+%F %H:%M') · ${{ github.event_name }} · run ${{ github.run_id }}" > "site/durum/$(date +%F).gonderildi"
+          find site/durum -name '*.gonderildi' -mtime +30 -delete
+          cd site
+          git add -A
+          git commit -q -m "Gönderildi: $(date +%F)"
+          git pull -q --rebase origin gh-pages || true
+          git push -q origin gh-pages
+
       # ---------------- Ortak ----------------
       - name: KAP önbelleğini kaydet
-        if: always()
+        if: always() && steps.gate.outputs.go != 'false'
         uses: actions/cache/save@v4
         with:
           path: output/_kap_cache
           key: kap-${{ github.run_id }}
 
       - name: Çıktıları sakla (7 gün)
-        if: always() && steps.mode.outputs.mode != 'kap-kopyasi'
+        if: always() && steps.mode.outputs.mode != 'kap-kopyasi' && steps.gate.outputs.go == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: brifing-${{ github.run_id }}

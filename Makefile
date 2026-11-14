@@ -1,6 +1,6 @@
 PY ?= .venv/bin/python
 
-.PHONY: install test mock run schedule terminal terminal-build email-setup schedule-install schedule-uninstall send-test media-server cloud-setup
+.PHONY: install test mock run schedule terminal terminal-build email-setup schedule-install schedule-uninstall send-test media-server cloud-setup cron-setup
 
 install:
 	python3 -m venv .venv && .venv/bin/pip install -q --upgrade pip && .venv/bin/pip install -q -r requirements.txt
@@ -42,3 +42,6 @@ media-server:    ## E-postadaki "Dinle" bağlantıları için yerel medya sunucu
 
 cloud-setup:     ## GitHub'a yükle + Secrets + ilk bulut çalışması + GitHub Pages (gh CLI gerekir)
 	./scripts/cloud_setup.sh
+
+cron-setup:      ## cron-job.org ile dakikası dakikasına tetikleme (GitHub zamanlayıcısı yalnızca yedek kalır)
+	$(PY) scripts/cronjob_setup.py
